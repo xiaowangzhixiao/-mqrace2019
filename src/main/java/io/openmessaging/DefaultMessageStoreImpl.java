@@ -1,7 +1,7 @@
 package io.openmessaging;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 这是一个简单的基于内存的实现，以方便选手理解题意；
@@ -9,12 +9,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DefaultMessageStoreImpl extends MessageStore {
 
-    private NavigableMap<Long, List<Message>> msgMap = new TreeMap<Long, List<Message>>();
+    private static AtomicInteger idGenerator = new AtomicInteger(0);
+
+    private ThreadLocal<Integer> id = ThreadLocal.withInitial(()->idGenerator.getAndIncrement());
+
+    private NavigableMap<Long, List<Message>> msgMap = new TreeMap<>();
 
     @Override
     public synchronized void put(Message message) {
         if (!msgMap.containsKey(message.getT())) {
-            msgMap.put(message.getT(), new ArrayList<Message>());
+            msgMap.put(message.getT(), new ArrayList<>());
         }
 
         msgMap.get(message.getT()).add(message);
@@ -23,7 +27,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
     @Override
     public synchronized List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        ArrayList<Message> res = new ArrayList<Message>();
+        ArrayList<Message> res = new ArrayList<>();
         NavigableMap<Long, List<Message>> subMap = msgMap.subMap(tMin, true, tMax, true);
         for (Map.Entry<Long, List<Message>> mapEntry : subMap.entrySet()) {
             List<Message> msgQueue = mapEntry.getValue();
