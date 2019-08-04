@@ -29,17 +29,7 @@ public class SortedRequestBuffer {
 
     private static long id = 0;
 
-    private static Comparator<Message> messageComparator = new Comparator<Message>() {
-        @Override
-        public int compare(Message m1, Message m2) {
-            return Long.compare(m1.getT(), m2.getT());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return this == o;
-        }
-    };
+    private static Comparator<Message> messageComparator = (m1, m2) -> m1.getT() >= m2.getT() ? 1: -1;
 
     static {
         skipListSets[0] = new ConcurrentSkipListSet<>(messageComparator);
