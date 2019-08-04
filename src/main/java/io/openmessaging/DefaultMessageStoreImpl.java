@@ -1,63 +1,40 @@
 package io.openmessaging;
+import io.openmessaging.request.RequestQueueBuffer;
 
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * 这是一个简单的基于内存的实现，以方便选手理解题意；
- * 实际提交时，请维持包名和类名不变，把方法实现修改为自己的内容；
- */
+
 public class DefaultMessageStoreImpl extends MessageStore {
 
     private static AtomicInteger idGenerator = new AtomicInteger(0);
 
     private ThreadLocal<Integer> id = ThreadLocal.withInitial(()->idGenerator.getAndIncrement());
 
-    private NavigableMap<Long, List<Message>> msgMap = new TreeMap<>();
+    private ThreadLocal<BlockingQueue<Message>> putBuffer = ThreadLocal.withInitial(()-> RequestQueueBuffer.getQueueBuffer(id.get(), 256));
 
     @Override
-    public synchronized void put(Message message) {
-        if (!msgMap.containsKey(message.getT())) {
-            msgMap.put(message.getT(), new ArrayList<>());
+    public void put(Message message) {
+        try {
+            putBuffer.get().put(message);
+            RequestQueueBuffer.put();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-
-        msgMap.get(message.getT()).add(message);
     }
 
 
     @Override
-    public synchronized List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        ArrayList<Message> res = new ArrayList<>();
-        NavigableMap<Long, List<Message>> subMap = msgMap.subMap(tMin, true, tMax, true);
-        for (Map.Entry<Long, List<Message>> mapEntry : subMap.entrySet()) {
-            List<Message> msgQueue = mapEntry.getValue();
-            for (Message msg : msgQueue) {
-                if (msg.getA() >= aMin && msg.getA() <= aMax) {
-                    res.add(msg);
-                }
-            }
-        }
-
-        return res;
+    public List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
+        System.exit(5);
+        return null;
     }
 
 
     @Override
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
-        long sum = 0;
-        long count = 0;
-        NavigableMap<Long, List<Message>> subMap = msgMap.subMap(tMin, true, tMax, true);
-        for (Map.Entry<Long, List<Message>> mapEntry : subMap.entrySet()) {
-            List<Message> msgQueue = mapEntry.getValue();
-            for (Message msg : msgQueue) {
-                if (msg.getA() >= aMin && msg.getA() <= aMax) {
-                    sum += msg.getA();
-                    count++;
-                }
-            }
-        }
-
-        return count == 0 ? 0 : sum / count;
+        return 0;
     }
 
 }
