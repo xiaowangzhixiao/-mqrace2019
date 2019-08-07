@@ -2,6 +2,7 @@ package io.openmessaging.file;
 
 import io.openmessaging.Constant;
 import io.openmessaging.Message;
+import io.openmessaging.list.SortedLinkedList;
 import io.openmessaging.request.SortedRequestBuffer;
 
 import java.io.IOException;
@@ -25,7 +26,6 @@ public class FileManager {
 
     static {
         try {
-            Files.createDirectories(Paths.get("/alidata1/race2019/data"));
             Files.createFile(Paths.get("/alidata1/race2019/data/data.ali"));
             fileChannel = AsynchronousFileChannel.open(Paths.get("/alidata1/race2019/data/data.ali"),StandardOpenOption.WRITE);
 
@@ -49,25 +49,23 @@ public class FileManager {
         return t;
     });
 
-    public static long commit(ConcurrentSkipListSet<Message> skipListSet, int mapIndex){
+    public static long commit(SortedLinkedList<Message> sortedLinkedList, int mapIndex){
         long tmp_offset = offset;
-        offset += skipListSet.size() * Constant.MESSAGE_SIZE;
+        offset += sortedLinkedList.size() * Constant.MESSAGE_SIZE;
 
         CompletableFuture.supplyAsync(()->{
             // 写文件
             long _offset = tmp_offset;
-            for (Message message: skipListSet){
+            Message message;
+            SortedLinkedList.Node<Message> node = sortedLinkedList.getFirst();
+            while (node != null){
+                message = node.item;
                 activeBuffer.putLong(message.getT());
                 activeBuffer.putLong(message.getA());
                 activeBuffer.put(message.getBody());
                 if (!activeBuffer.hasRemaining()){
-                    ByteBuffer writingBuffer = activeBuffer.slice();
+                    ByteBuffer writingBuffer = activeBuffer;
                     writingBuffer.flip();
-                    try {
-                        activeBuffer = writeBuffers.take();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
                     fileChannel.write(writingBuffer, _offset, null, new CompletionHandler<Integer, Object>() {
                         @Override
                         public void completed(Integer result, Object attachment) {
@@ -81,18 +79,20 @@ public class FileManager {
                         @Override
                         public void failed(Throwable exc, Object attachment) {}
                     });
+                    try {
+                        activeBuffer = writeBuffers.take();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     _offset += BUFFER_SIZE;
                 }
+
+                node = node.next;
             }
 
             if (activeBuffer.position() != 0){
-                ByteBuffer writingBuffer = activeBuffer.slice();
+                ByteBuffer writingBuffer = activeBuffer;
                 writingBuffer.flip();
-                try {
-                    activeBuffer = writeBuffers.take();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 fileChannel.write(writingBuffer, _offset, null, new CompletionHandler<Integer, Object>() {
                     @Override
                     public void completed(Integer result, Object attachment) {
@@ -106,13 +106,20 @@ public class FileManager {
                     @Override
                     public void failed(Throwable exc, Object attachment) {}
                 });
+                 try {
+                    activeBuffer = writeBuffers.take();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
             return null;
         },executorService).thenRun(()->{
-            skipListSet.clear();
+            sortedLinkedList.clear();
             SortedRequestBuffer.writing[mapIndex] = false;
-            SortedRequestBuffer.completeWrite.signalAll();
+            SortedRequestBuffer.lock.lock();
+            SortedRequestBuffer.completeWrite.signal();
+            SortedRequestBuffer.lock.unlock();
         });
 
 

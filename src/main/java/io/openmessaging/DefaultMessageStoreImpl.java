@@ -18,7 +18,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
     public void put(Message message) {
         try {
             putBuffer.get().put(message);
-            RequestQueueBuffer.put();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
