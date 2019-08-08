@@ -1,5 +1,7 @@
 package io.openmessaging.list;
 
+import io.openmessaging.Message;
+
 import java.util.Comparator;
 import java.util.function.Consumer;
 
@@ -37,7 +39,12 @@ public class SortedLinkedList<E> {
     }
 
     public Node<E> add(Node<E> pre, E item){
-        pre.next = new Node<>(item, pre.next);
+        Node<E> node = new Node<>(item, pre.next);
+        if (pre.next == null){
+            tail = node;
+        }
+        pre.next = node;
+
         size++;
         return pre.next;
     }
@@ -49,7 +56,11 @@ public class SortedLinkedList<E> {
             }
             before = before.next;
         }
-        before.next = new Node<>(item, before.next);
+        Node<E> node =  new Node<>(item, before.next);
+        if (before.next == null){
+            tail = node;
+        }
+        before.next = node;
         size++;
         return before.next;
     }
@@ -96,6 +107,10 @@ public class SortedLinkedList<E> {
 
     public Node<E> getFirst() {
         return head.next;
+    }
+
+    public Node<E> getTail() {
+        return tail;
     }
 }
 

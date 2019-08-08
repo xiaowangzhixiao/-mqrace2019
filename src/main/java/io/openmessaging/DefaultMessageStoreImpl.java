@@ -1,5 +1,6 @@
 package io.openmessaging;
 import io.openmessaging.request.RequestQueueBuffer;
+import io.openmessaging.request.SortedRequestBuffer;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -26,7 +27,16 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
     @Override
     public List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        System.exit(5);
+        if (RequestQueueBuffer.writing){
+            synchronized (this){
+                if (RequestQueueBuffer.writing){
+                    RequestQueueBuffer.writing = false;
+                    SortedRequestBuffer.commit();
+                }
+            }
+
+        }
+
         return null;
     }
 

@@ -5,6 +5,8 @@ import io.openmessaging.file.FileManager;
 import io.openmessaging.index.Index;
 import io.openmessaging.index.IndexNode;
 import io.openmessaging.list.SortedLinkedList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -50,12 +52,8 @@ public class SortedRequestBuffer {
         node = activeList.add(node, message);
         nodeMap.put(threadId, node);
         if (activeList.size() == SKIPLIST_SIZE){
-            
-            IndexNode indexNode = new IndexNode(activeList.getFirst().item.getT());
-            writing[mapIndex] = true;
-            long offset = FileManager.commit(activeList, mapIndex);
-            indexNode.setOffset(offset);
-            Index.getInstance().add(indexNode);
+
+            commit();
 
             mapIndex = (mapIndex + 1) % LEN;
             try {
@@ -73,6 +71,15 @@ public class SortedRequestBuffer {
         }
     }
 
+    public static void commit(){
+        System.out.printf("start t:%d, a:%d\n",activeList.getFirst().item.getT(), activeList.getFirst().item.getA());
+        System.out.printf("end t:%d, a:%d\n",activeList.getTail().item.getT(), activeList.getTail().item.getA());
 
+        IndexNode indexNode = new IndexNode(activeList.getFirst().item.getT());
+        writing[mapIndex] = true;
+        long offset = FileManager.commit(activeList, mapIndex);
+        indexNode.setOffset(offset);
+        Index.getInstance().add(indexNode);
+    }
 
 }

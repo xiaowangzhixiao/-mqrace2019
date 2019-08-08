@@ -2,20 +2,16 @@ package io.openmessaging.request;
 
 import io.openmessaging.Message;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class RequestQueueBuffer {
 
     private static Map<Integer, BlockingQueue<Message>> requestQueueBufferMap = new ConcurrentHashMap<>();
 
-    private static boolean writing = true;
+    public static boolean writing = true;
 
     static {
         Thread sortThread = new Thread(() -> {
@@ -32,12 +28,6 @@ public class RequestQueueBuffer {
                             e.printStackTrace();
                         }
                     }
-                }
-
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
 
             }

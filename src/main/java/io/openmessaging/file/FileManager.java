@@ -64,49 +64,21 @@ public class FileManager {
                 activeBuffer.putLong(message.getA());
                 activeBuffer.put(message.getBody());
                 if (!activeBuffer.hasRemaining()){
-                    ByteBuffer writingBuffer = activeBuffer;
-                    writingBuffer.flip();
-                    fileChannel.write(writingBuffer, _offset, null, new CompletionHandler<Integer, Object>() {
-                        @Override
-                        public void completed(Integer result, Object attachment) {
-                            writingBuffer.clear();
-                            try {
-                                writeBuffers.put(writingBuffer);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        @Override
-                        public void failed(Throwable exc, Object attachment) {}
-                    });
+                    writeToFile(_offset);
+                    _offset += BUFFER_SIZE;
                     try {
                         activeBuffer = writeBuffers.take();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    _offset += BUFFER_SIZE;
                 }
 
                 node = node.next;
             }
 
             if (activeBuffer.position() != 0){
-                ByteBuffer writingBuffer = activeBuffer;
-                writingBuffer.flip();
-                fileChannel.write(writingBuffer, _offset, null, new CompletionHandler<Integer, Object>() {
-                    @Override
-                    public void completed(Integer result, Object attachment) {
-                        writingBuffer.clear();
-                        try {
-                            writeBuffers.put(writingBuffer);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    @Override
-                    public void failed(Throwable exc, Object attachment) {}
-                });
-                 try {
+                writeToFile(_offset);
+                try {
                     activeBuffer = writeBuffers.take();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -125,6 +97,24 @@ public class FileManager {
 
 
         return tmp_offset;
+    }
+
+    private static void writeToFile(long _offset) {
+        ByteBuffer writingBuffer = activeBuffer;
+        writingBuffer.flip();
+        fileChannel.write(writingBuffer, _offset, null, new CompletionHandler<Integer, Object>() {
+            @Override
+            public void completed(Integer result, Object attachment) {
+                writingBuffer.clear();
+                try {
+                    writeBuffers.put(writingBuffer);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            @Override
+            public void failed(Throwable exc, Object attachment) {}
+        });
     }
 
 }
