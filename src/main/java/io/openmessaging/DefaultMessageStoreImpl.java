@@ -24,12 +24,12 @@ public class DefaultMessageStoreImpl extends MessageStore {
             RequestQueueBuffer.putToQueue(message, putBuffer.get());
         } else {
 
-//            try {
-                while (!putBuffer.get().offer(message))
+            try {
+                while (!putBuffer.get().offer(message, 10, TimeUnit.NANOSECONDS))
                     ;
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
         }
 

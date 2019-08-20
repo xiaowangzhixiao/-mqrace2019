@@ -49,11 +49,23 @@ public class RequestQueueBuffer {
                 nums++;
                 FileManager.put(pair.first);
                 Message next = null;
-                try {
-                    next = pair.second.poll(10, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                int count = 0;
+                while (next == null){
+                    if (count > 200){
+                        System.out.println("finish poll");
+                        System.out.printf("message %d t:%d, a:%d\n", nums, pair.first.getT(), pair.first.getA());
+                        System.exit(-1);
+                        break;
+                    }
+                    try {
+                        next = pair.second.poll(10, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    count++;
+
                 }
+
                 if (next != null) {
                     priorityQueue.add(new Pair<>(next, pair.second));
                 }
