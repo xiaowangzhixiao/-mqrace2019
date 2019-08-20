@@ -1,29 +1,28 @@
 package io.openmessaging.index;
 
+import static io.openmessaging.utils.BinarySearch.binarySearch;
+
 /**
- * 索引常驻内存
+ * 二级索引
  */
-public class Index {
+public class TimeIndex {
     private long[] baseTime;
     private int[] offset;
     private int nums = 0;
 
-    public Index(int capacity) {
+    public TimeIndex(int capacity) {
         baseTime = new long[capacity];
         offset = new int[capacity];
     }
 
+    public void put(long baseTime, int offset) {
+        this.baseTime[nums] = baseTime;
+        this.offset[nums] = offset;
+        nums++;
+    }
+
     public int search(long t) {
-        int left = 0, right = nums - 1;
-        while (left < right) {
-            int mid = left + (right - left) / 2;
-            if (baseTime[mid] > t) {
-                right = mid;
-            } else {
-                left = mid+1;
-            }
-        }
-        return left - 1;
+        return binarySearch(t, nums, baseTime);
     }
 
     public long getBaseTime(int index) {

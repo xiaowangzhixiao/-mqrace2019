@@ -1,11 +1,9 @@
 package io.openmessaging;
 
-import io.openmessaging.file.FileManager;
-import io.openmessaging.request.RequestQueueBuffer;
+import io.openmessaging.file.TimeIO;
+import io.openmessaging.file.WriteManager;
 
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultMessageStoreImpl extends MessageStore {
@@ -13,44 +11,42 @@ public class DefaultMessageStoreImpl extends MessageStore {
     private static AtomicInteger idGenerator = new AtomicInteger(0);
 
     private ThreadLocal<Integer> id = new ThreadLocal<>();
+    private ThreadLocal<WriteManager> writeManager = new ThreadLocal<>();
 
-    private ThreadLocal<BlockingQueue<Message>> putBuffer = new ThreadLocal<>();
+    private boolean writing = true;
+
+    private TimeIO timeIO;
 
     @Override
     public void put(Message message) {
-        if (putBuffer.get() == null) {
+        if (writeManager.get() == null) {
             id.set(idGenerator.getAndIncrement());
-            putBuffer.set(RequestQueueBuffer.getQueueBuffer(id.get(), 10000));
-            RequestQueueBuffer.putToQueue(message, putBuffer.get());
-        } else {
-
-//            try {
-                while (!putBuffer.get().offer(message))
-                    ;
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-
+            System.out.println("write thread:" + id.get());
+            writeManager.set(WriteManager.get(id.get()));
         }
+
+        writeManager.get().put(message);
 
     }
 
     @Override
     public List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        if (RequestQueueBuffer.writing) {
-            synchronized (this) {
-                if (RequestQueueBuffer.writing) {
-                    while (RequestQueueBuffer.writing) {
-                        try {
-                            Thread.sleep(5);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    FileManager.finishWrite();
+        if (id.get() == null){
+            id.set(idGenerator.getAndIncrement());
+            System.out.println("read thread:" + id.get());
+            // TODO: other threadLocal
+        }
+        if (writing){
+            synchronized (this){
+                if (writing){
+                    // 刷盘
+                    WriteManager.finishWrite();
+                    writing = false;
                 }
             }
         }
+
+
 
         return null;
     }

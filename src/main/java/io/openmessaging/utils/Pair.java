@@ -1,4 +1,4 @@
-package io.openmessaging.request;
+package io.openmessaging.utils;
 
 /**
  * Pair

@@ -5,4 +5,5 @@ public class Constant {
     public static final int AT_SIZE = 16;
     public static final int A_SIZE = 8;
     public static final int BODY_SIZE = 34;
+    public static final String DIR_PATH = "/alidata1/race2019/data/";
 }

@@ -3,22 +3,26 @@ package io.openmessaging.file;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * FileIo
  */
-public class FileIo {
+public class FileIO {
 
     private long offset = 0;
-    private AsynchronousFileChannel fileChannel;
+    private AsynchronousFileChannel writeFileChannel;
+    private FileChannel readFileChannel;
     private BlockingQueue<ByteBuffer> buffers;
+    private ConcurrentHashMap<Integer, ByteBuffer> readBuffer = new ConcurrentHashMap<>();
     private int bufferSize;
     private ByteBuffer activeBuffer;
 
@@ -27,13 +31,14 @@ public class FileIo {
      * @param bufferSize buffer块的大小
      * @param bufferNums buffer块的个数
      */
-    public FileIo(int bufferSize, int bufferNums, String filePath) {
+    public FileIO(int bufferSize, int bufferNums, String filePath) {
         buffers = new LinkedBlockingQueue<>(bufferNums);
         this.bufferSize = bufferSize;
         try {
             Files.createFile(Paths.get(filePath));
-            fileChannel = AsynchronousFileChannel.open(Paths.get(filePath),
+            writeFileChannel = AsynchronousFileChannel.open(Paths.get(filePath),
                     StandardOpenOption.WRITE);
+            readFileChannel = FileChannel.open(Paths.get(filePath), StandardOpenOption.READ);
 
             for (int i = 0; i < bufferNums; i++) {
                 ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
@@ -70,7 +75,7 @@ public class FileIo {
 
     private void writeToFile(ByteBuffer buffer) {
         buffer.flip();
-        fileChannel.write(buffer, offset, null, new CompletionHandler<Integer, Object>() {
+        writeFileChannel.write(buffer, offset, null, new CompletionHandler<Integer, Object>() {
             @Override
             public void completed(Integer result, Object attachment) {
                 buffer.clear();
@@ -89,13 +94,18 @@ public class FileIo {
 
     public void force() {
         activeBuffer.flip();
-        Future<Integer> future = fileChannel.write(activeBuffer, offset);
+        Future<Integer> future = writeFileChannel.write(activeBuffer, offset);
         while (!future.isDone()) {
         }
         activeBuffer.clear();
         try {
             buffers.put(activeBuffer);
         } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        try {
+            writeFileChannel.close();
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
