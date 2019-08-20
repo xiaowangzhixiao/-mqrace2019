@@ -20,16 +20,16 @@ public class DefaultMessageStoreImpl extends MessageStore {
     public void put(Message message) {
         if (putBuffer.get() == null) {
             id.set(idGenerator.getAndIncrement());
-            putBuffer.set(RequestQueueBuffer.getQueueBuffer(id.get(), 16384));
+            putBuffer.set(RequestQueueBuffer.getQueueBuffer(id.get(), 10000));
             RequestQueueBuffer.putToQueue(message, putBuffer.get());
         } else {
 
-            try {
-                while (!putBuffer.get().offer(message, 10, TimeUnit.NANOSECONDS))
+//            try {
+                while (!putBuffer.get().offer(message))
                     ;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
 
         }
 

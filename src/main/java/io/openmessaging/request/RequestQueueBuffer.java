@@ -44,7 +44,7 @@ public class RequestQueueBuffer {
             while (!priorityQueue.isEmpty()) {
                 Pair<Message, BlockingQueue<Message>> pair = priorityQueue.poll();
                 if (nums % 100000 == 0) {
-                    System.out.printf("message %d t:%d, a:%d\n", nums, pair.first.getT(), pair.first.getA());
+                    System.out.printf("time:%d message %d, t:%d, a:%d\n", System.currentTimeMillis(), nums, pair.first.getT(), pair.first.getA());
                 }
                 nums++;
                 FileManager.put(pair.first);
@@ -54,7 +54,7 @@ public class RequestQueueBuffer {
                     if (count > 200){
                         System.out.println("finish poll");
                         System.out.printf("message %d t:%d, a:%d\n", nums, pair.first.getT(), pair.first.getA());
-                        System.exit(-1);
+//                        System.exit(-1);
                         break;
                     }
                     try {

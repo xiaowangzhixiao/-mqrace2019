@@ -18,12 +18,12 @@ public class Index {
         while (left < right) {
             int mid = left + (right - left) / 2;
             if (baseTime[mid] > t) {
-                right = mid - 1;
+                right = mid;
             } else {
-                left = mid;
+                left = mid+1;
             }
         }
-        return left;
+        return left - 1;
     }
 
     public long getBaseTime(int index) {
