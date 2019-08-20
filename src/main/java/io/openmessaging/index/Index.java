@@ -1,30 +1,43 @@
 package io.openmessaging.index;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
 /**
  * 索引常驻内存
  */
 public class Index {
-    private static Index instance = new Index();
-    private List<IndexNode> index = new ArrayList<>();
+    private long[] baseTime;
+    private int[] offset;
+    private int nums = 0;
 
-    private Index() {}
-
-    public IndexNode search(long t){
-        int i =Collections.binarySearch(index,new IndexNode(t), Comparator.comparingLong(IndexNode::getT));
-        return index.get(i);
+    public Index(int capacity) {
+        baseTime = new long[capacity];
+        offset = new int[capacity];
     }
 
-    public void add(IndexNode indexNode){
-        index.add(indexNode);
+    public int search(long t) {
+        int left = 0, right = nums - 1;
+        while (left < right) {
+            int mid = left + (right - left) / 2;
+            if (baseTime[mid] > t) {
+                right = mid - 1;
+            } else {
+                left = mid;
+            }
+        }
+        return left;
     }
 
-    public static Index getInstance(){
-        return instance;
+    public long getBaseTime(int index) {
+        if (index >= nums) {
+            return Long.MAX_VALUE;
+        }
+        return baseTime[index];
+    }
+
+    public int getOffset(int index) {
+        if (index >= nums) {
+            return Integer.MAX_VALUE;
+        }
+        return offset[index];
     }
 
 }
