@@ -5,16 +5,13 @@ import io.openmessaging.index.BlockIndex;
 import io.openmessaging.utils.Pair;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static io.openmessaging.Constant.*;
-import static io.openmessaging.utils.Sort.sort;
 
 public class FileManager {
-    private static final int BUFFER_LEN = 48;
+    private static final int BUFFER_LEN = 24;
     private static final int BODY_BUFFER_SIZE = BODY_SIZE * 4 * 1024;
     private static final int AT_BUFFER_SIZE = AT_SIZE * 4 * 1024;
 
@@ -71,69 +68,62 @@ public class FileManager {
     private static ThreadLocal<Boolean> readInited = ThreadLocal.withInitial(()->false);
 
     public static List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        LinkedList<LinkedList<Message>> messages = new LinkedList<>();
+        List<Message> result = new ArrayList<>();
         for (Map.Entry<Integer, FileManager> entry: fileManagers.entrySet()){
 //            System.out.println("read write thread " + entry.getKey());
             entry.getValue().atIo.initRead();
             entry.getValue().bodyIo.initRead();
-            messages.add(entry.getValue().get(aMin,aMax,tMin,tMax));
+            result.addAll(entry.getValue().get(aMin,aMax,tMin,tMax));
         }
 
-        return sort(messages);
+        result.sort(Comparator.comparingLong(Message::getT));
+        return result;
     }
 
-    private LinkedList<Message> get(long aMin, long aMax, long tMin, long tMax) {
-        LinkedList<Message> result = new LinkedList<>();
+    private List<Message> get(long aMin, long aMax, long tMin, long tMax) {
+        List<Message> result = new ArrayList<>();
 
         int block = blockIndex.search(tMin);
         if (block == -1){
             block = 0;
         }
 
-        long offset;
-        int size;
+        long offset = blockIndex.offset[block];
+        int size = blockIndex.size[block];
         int inOffset = 0;
         long t;
         long a;
-        ByteBuffer bodyByteBuffer;
-
-        boolean preRead = true;
+        atIo.read(offset * AT_SIZE);
+        bodyIo.read(offset * BODY_SIZE);
+        ByteBuffer bodyByteBuffer = bodyIo.getReadByteBuffer();
 
         while (true){
-            if (block + 1 == blockIndex.nums){
-                preRead = false;
-            }
-            offset = blockIndex.offset[block];
-            size = blockIndex.size[block];
-
-            atIo.read(offset * AT_SIZE, preRead);
             t = atIo.getReadByteBuffer().getLong();
             a = atIo.getReadByteBuffer().getLong();
-
-            bodyIo.read(offset * BODY_SIZE, preRead);
-            bodyByteBuffer = bodyIo.getReadByteBuffer();
-
             if (t >= tMin && t <= tMax && a >= aMin && a <= aMax){
                 bodyByteBuffer.position(inOffset*BODY_SIZE);
                 Message m = new Message(a, t, new byte[34]);
                 bodyByteBuffer.get(m.getBody());
-                if (t != ByteBuffer.wrap(m.getBody()).getLong()) {
-                    System.out.println("t:" + t+" body t:"+ ByteBuffer.wrap(m.getBody()).getLong());
-                }
-                result.addLast(m);
+//                if (t != ByteBuffer.wrap(m.getBody()).getLong()) {
+//                    System.out.println("t:" + t+" body t:"+ ByteBuffer.wrap(m.getBody()).getLong());
+//                }
+                result.add(m);
             }
             if (t > tMax){
                 break;
             }
-
             inOffset++;
             if (inOffset == size){
-                bodyByteBuffer.position(inOffset * BODY_SIZE);
                 inOffset = 0;
                 block++;
                 if (block == blockIndex.nums){
                     break;
                 }
+                offset = blockIndex.offset[block];
+                size = blockIndex.size[block];
+                atIo.read(offset * AT_SIZE);
+                bodyIo.read(offset * BODY_SIZE);
+                bodyByteBuffer = bodyIo.getReadByteBuffer();
             }
         }
 
@@ -162,24 +152,16 @@ public class FileManager {
             block = 0;
         }
 
-        long offset;
-        int size;
+        long offset = blockIndex.offset[block];
+        int size = blockIndex.size[block];
         int inOffset = 0;
         long t;
         long a;
-        boolean preRead = true;
+        atIo.read(offset * AT_SIZE);
 
         while (true){
-            if (block + 1 == blockIndex.nums){
-                preRead = false;
-            }
-            offset = blockIndex.offset[block];
-            size = blockIndex.offset[block];
-
-            atIo.read(offset * AT_SIZE, preRead);
             t = atIo.getReadByteBuffer().getLong();
             a = atIo.getReadByteBuffer().getLong();
-
             if (t >= tMin && t <= tMax && a >= aMin && a <= aMax){
                 sum += a;
                 nums++;
@@ -187,13 +169,16 @@ public class FileManager {
             if (t > tMax){
                 break;
             }
-
             inOffset++;
             if (inOffset == size){
+                inOffset = 0;
                 block++;
                 if (block == blockIndex.nums){
                     break;
                 }
+                offset = blockIndex.offset[block];
+                size = blockIndex.size[block];
+                atIo.read(offset * AT_SIZE);
             }
         }
 
