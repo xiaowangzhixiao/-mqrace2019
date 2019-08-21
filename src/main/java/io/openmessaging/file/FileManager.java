@@ -12,8 +12,9 @@ import static io.openmessaging.Constant.*;
 
 public class FileManager {
     private static final int BUFFER_LEN = 24;
-    private static final int BODY_BUFFER_SIZE = BODY_SIZE * 4 * 1024;
-    private static final int AT_BUFFER_SIZE = AT_SIZE * 4 * 1024;
+    private static final int BLOCK_INDEX_SIZE = 4 * 1024;
+    private static final int BODY_BUFFER_SIZE = BODY_SIZE * BLOCK_INDEX_SIZE;
+    private static final int AT_BUFFER_SIZE = AT_SIZE * BLOCK_INDEX_SIZE;
 
     private static ConcurrentHashMap<Integer, FileManager> fileManagers = new ConcurrentHashMap<>();
 
@@ -38,9 +39,9 @@ public class FileManager {
     }
 
     public void put(Message message) {
-        if(nums % (4*1024) == 0){
-            blockIndex.add(message.getT(), nums, 4*1024);
-            System.out.printf("t:%d, a:%d\n", message.getT(), message.getA());
+        if(nums % BLOCK_INDEX_SIZE == 0){
+            blockIndex.add(message.getT(), nums, BLOCK_INDEX_SIZE);
+//            System.out.printf("t:%d, a:%d\n", message.getT(), message.getA());
         }
         nums++;
         ByteBuffer buffer = atIo.getActiveBuffer();
