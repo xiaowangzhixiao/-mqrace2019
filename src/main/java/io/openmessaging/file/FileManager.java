@@ -17,7 +17,7 @@ public class FileManager {
     private static final int BODY_BUFFER_SIZE = BODY_SIZE * WRITE_BUFFER_SIZE;
     private static final int AT_BUFFER_SIZE = AT_SIZE * WRITE_BUFFER_SIZE;
 
-    private static final int READ_BUFFER_SIZE = 4 * 1024;
+    private static final int READ_BUFFER_SIZE = 2 * 1024;
     private static final int BODY_READ_SIZE = BODY_SIZE * READ_BUFFER_SIZE;
     private static final int AT_READ_SIZE = AT_SIZE * READ_BUFFER_SIZE;
 
