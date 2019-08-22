@@ -29,8 +29,8 @@ public class BinarySearch {
 
     public static void main(String[] args) {
         long t = 5;
-        long[] ts = {2,3,5,5,7,8};
-        System.out.println(binarySearchMin(t, 6 , ts));
-        System.out.println(binarySearchMax(t, 6 , ts));
+        long[] ts = {2,3,5,5,8};
+        System.out.println(binarySearchMin(t, 5 , ts));
+        System.out.println(binarySearchMax(t, 5 , ts));
     }
 }

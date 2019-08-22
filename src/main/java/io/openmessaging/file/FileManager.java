@@ -17,12 +17,12 @@ public class FileManager {
     private static final int BODY_BUFFER_SIZE = BODY_SIZE * WRITE_BUFFER_SIZE;
     private static final int AT_BUFFER_SIZE = AT_SIZE * WRITE_BUFFER_SIZE;
 
-    private static final int READ_BUFFER_SIZE = 2 * 1024;
+    private static final int READ_BUFFER_SIZE = 4 * 1024;
     private static final int BODY_READ_SIZE = BODY_SIZE * READ_BUFFER_SIZE;
     private static final int AT_READ_SIZE = AT_SIZE * READ_BUFFER_SIZE;
 
     private static final int AVG_BUFFER_SIZE = 8 * 1024;
-    private static final int AT_AVG_SIZE =AT_SIZE * AVG_BUFFER_SIZE;
+    private static final int AT_AVG_SIZE = AT_SIZE * AVG_BUFFER_SIZE;
 
     private static ConcurrentHashMap<Integer, FileManager> fileManagers = new ConcurrentHashMap<>();
 
@@ -136,7 +136,7 @@ public class FileManager {
         int nums = 0;
         for (Map.Entry<Integer, FileManager> entry: fileManagers.entrySet()){
 //            System.out.println("read avg write thread " + entry.getKey());
-            entry.getValue().atIo.initRead(AT_AVG_SIZE);
+//            entry.getValue().atIo.initRead(AT_AVG_SIZE);
             Pair<Long, Integer> res = entry.getValue().getAvg(aMin,aMax,tMin,tMax);
             sum += res.first;
             nums += res.second;
@@ -148,33 +148,32 @@ public class FileManager {
         long sum = 0;
         int nums = 0;
 
-        int block = blockIndex.searchMin(tMin);
+        int minBlock = blockIndex.searchMin(tMin);
+        if (tMin > blockIndex.time[blockIndex.nums-1]){
+            minBlock += 1;
+        }
+        int maxBlock = blockIndex.searchMax(tMax);
 
-        long offset = block * BLOCK_INDEX_SIZE;
-        int inOffset = 0;
+        int minOffset = minBlock * BLOCK_INDEX_SIZE;
+        int maxOffset = maxBlock * BLOCK_INDEX_SIZE;
+        if (tMax >= blockIndex.time[blockIndex.nums-1]){
+            maxOffset  = this.nums;
+        }
+        ByteBuffer readBuffer = ByteBuffer.allocateDirect((maxOffset - minOffset) * AT_SIZE);
+
         long t;
         long a;
-        atIo.read(offset * AT_SIZE);
+        atIo.read(readBuffer,(long)minOffset * (long)AT_SIZE);
 
         while (true){
-            t = atIo.getReadByteBuffer().getLong();
-            a = atIo.getReadByteBuffer().getLong();
+            t = readBuffer.getLong();
+            a = readBuffer.getLong();
             if (t >= tMin && t <= tMax && a >= aMin && a <= aMax){
                 sum += a;
                 nums++;
             }
-            if (t > tMax){
+            if (t > tMax || !readBuffer.hasRemaining()){
                 break;
-            }
-
-            inOffset++;
-            if (offset + inOffset == this.nums){
-                break;
-            }
-            if (inOffset == AVG_BUFFER_SIZE){
-                offset = offset + inOffset;
-                inOffset = 0;
-                atIo.read(offset * AT_SIZE);
             }
         }
 

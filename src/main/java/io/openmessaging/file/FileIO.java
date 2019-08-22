@@ -120,6 +120,13 @@ public class FileIO {
         byteBuffer.flip();
     }
 
+    public void read(ByteBuffer byteBuffer, long offset){
+        byteBuffer.clear();
+        Future future = fileChannel.read(byteBuffer, offset);
+        while (!future.isDone()) ;
+        byteBuffer.flip();
+    }
+
     public ByteBuffer getReadByteBuffer(){
         return readByteBuffers.get();
     }
