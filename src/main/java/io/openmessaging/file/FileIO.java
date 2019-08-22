@@ -105,9 +105,10 @@ public class FileIO {
 
     private ThreadLocal<ByteBuffer> readByteBuffers = new ThreadLocal<>();
 
-    public void initRead(){
+    public void initRead(int bufferSize){
         if (readByteBuffers.get() == null) {
-            readByteBuffers.set(buffers.poll());
+            ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
+            readByteBuffers.set(byteBuffer);
         }
     }
 

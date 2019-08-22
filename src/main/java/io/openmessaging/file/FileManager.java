@@ -11,18 +11,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import static io.openmessaging.Constant.*;
 
 public class FileManager {
-    private static final int BUFFER_LEN = 24;
-    private static final int BLOCK_INDEX_SIZE = 1024;
-    private static final int BLOCK_SIZE = 4 * 1024;
-    private static final int BODY_BUFFER_SIZE = BODY_SIZE * BLOCK_SIZE;
-    private static final int AT_BUFFER_SIZE = AT_SIZE * BLOCK_SIZE;
+    private static final int BUFFER_LEN = 12;
+    private static final int BLOCK_INDEX_SIZE = 512;
+    private static final int WRITE_BUFFER_SIZE = 8 * 1024;
+    private static final int BODY_BUFFER_SIZE = BODY_SIZE * WRITE_BUFFER_SIZE;
+    private static final int AT_BUFFER_SIZE = AT_SIZE * WRITE_BUFFER_SIZE;
+
+    private static final int READ_BUFFER_SIZE = 2 * 1024;
+    private static final int BODY_READ_SIZE = BODY_SIZE * READ_BUFFER_SIZE;
+    private static final int AT_READ_SIZE = AT_SIZE * READ_BUFFER_SIZE;
+
+    private static final int AVG_BUFFER_SIZE = 8 * 1024;
+    private static final int AT_AVG_SIZE =AT_SIZE * AVG_BUFFER_SIZE;
 
     private static ConcurrentHashMap<Integer, FileManager> fileManagers = new ConcurrentHashMap<>();
 
     private FileIO atIo;
     private FileIO bodyIo;
     private volatile int nums = 0;
-    private BlockIndex blockIndex = new BlockIndex(200000);
+    private BlockIndex blockIndex = new BlockIndex(400000);
 
     public static FileManager getWriteManager(int id) {
         if (!fileManagers.containsKey(id)){
@@ -70,8 +77,8 @@ public class FileManager {
         List<Message> result = new ArrayList<>();
         for (Map.Entry<Integer, FileManager> entry: fileManagers.entrySet()){
 //            System.out.println("read write thread " + entry.getKey());
-            entry.getValue().atIo.initRead();
-            entry.getValue().bodyIo.initRead();
+            entry.getValue().atIo.initRead(AT_READ_SIZE);
+            entry.getValue().bodyIo.initRead(BODY_READ_SIZE);
             result.addAll(entry.getValue().get(aMin,aMax,tMin,tMax));
         }
 
@@ -112,7 +119,7 @@ public class FileManager {
             if (offset + inOffset == this.nums){
                 break;
             }
-            if (inOffset == BLOCK_SIZE){
+            if (inOffset == READ_BUFFER_SIZE){
                 offset = offset + inOffset;
                 inOffset = 0;
                 atIo.read(offset * AT_SIZE);
@@ -129,7 +136,7 @@ public class FileManager {
         int nums = 0;
         for (Map.Entry<Integer, FileManager> entry: fileManagers.entrySet()){
 //            System.out.println("read avg write thread " + entry.getKey());
-            entry.getValue().atIo.initRead();
+            entry.getValue().atIo.initRead(AT_AVG_SIZE);
             Pair<Long, Integer> res = entry.getValue().getAvg(aMin,aMax,tMin,tMax);
             sum += res.first;
             nums += res.second;
@@ -167,7 +174,7 @@ public class FileManager {
             if (offset + inOffset == this.nums){
                 break;
             }
-            if (inOffset == BLOCK_SIZE){
+            if (inOffset == AVG_BUFFER_SIZE){
                 offset = offset + inOffset;
                 inOffset = 0;
                 atIo.read(offset * AT_SIZE);
