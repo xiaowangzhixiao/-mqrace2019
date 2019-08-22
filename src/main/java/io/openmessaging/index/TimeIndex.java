@@ -1,6 +1,6 @@
 package io.openmessaging.index;
 
-import static io.openmessaging.utils.BinarySearch.binarySearch;
+import static io.openmessaging.utils.BinarySearch.binarySearchMin;
 
 /**
  * 二级索引
@@ -22,7 +22,7 @@ public class TimeIndex {
     }
 
     public int search(long t) {
-        return binarySearch(t, nums, baseTime);
+        return binarySearchMin(t, nums, baseTime);
     }
 
     public long getBaseTime(int index) {

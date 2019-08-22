@@ -1,6 +1,7 @@
 package io.openmessaging.index;
 
-import static io.openmessaging.utils.BinarySearch.binarySearch;
+import static io.openmessaging.utils.BinarySearch.binarySearchMax;
+import static io.openmessaging.utils.BinarySearch.binarySearchMin;
 
 public class BlockIndex {
     public long[] time;
@@ -15,10 +16,17 @@ public class BlockIndex {
         nums++;
     }
 
-    public int search(long t) {
-        return binarySearch(t, nums, time);
+    public int searchMin(long t) {
+        int index = binarySearchMin(t, nums, time);
+        if (index < 0){
+            index = 0;
+        }
+        return index;
     }
 
+    public int searchMax(long t) {
+        return binarySearchMax(t, nums, time);
+    }
 
     public long getTime(int index) {
         return time[index];

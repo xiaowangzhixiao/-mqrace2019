@@ -89,7 +89,7 @@ public class FileManager {
     private List<Message> get(long aMin, long aMax, long tMin, long tMax) {
         List<Message> result = new ArrayList<>();
 
-        int block = blockIndex.search(tMin);
+        int block = blockIndex.searchMin(tMin);
         if (block == -1){
             block = 0;
         }
@@ -148,10 +148,7 @@ public class FileManager {
         long sum = 0;
         int nums = 0;
 
-        int block = blockIndex.search(tMin);
-        if (block == -1){
-            block = 0;
-        }
+        int block = blockIndex.searchMin(tMin);
 
         long offset = block * BLOCK_INDEX_SIZE;
         int inOffset = 0;
