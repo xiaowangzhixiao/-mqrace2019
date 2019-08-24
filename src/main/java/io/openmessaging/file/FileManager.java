@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static io.openmessaging.Constant.*;
 
 public class FileManager {
-    private static final int BUFFER_LEN = 12;
+    private static final int BUFFER_LEN = 4;
     private static final int BLOCK_INDEX_SIZE = 512;
     private static final int WRITE_BUFFER_SIZE = 8 * 1024;
     private static final int BODY_BUFFER_SIZE = BODY_SIZE * WRITE_BUFFER_SIZE;
@@ -77,8 +77,8 @@ public class FileManager {
         List<Message> result = new ArrayList<>();
         for (Map.Entry<Integer, FileManager> entry: fileManagers.entrySet()){
 //            System.out.println("read write thread " + entry.getKey());
-            entry.getValue().atIo.initRead(AT_READ_SIZE);
-            entry.getValue().bodyIo.initRead(BODY_READ_SIZE);
+//            entry.getValue().atIo.initRead(AT_READ_SIZE);
+//            entry.getValue().bodyIo.initRead(BODY_READ_SIZE);
             result.addAll(entry.getValue().get(aMin,aMax,tMin,tMax));
         }
 
