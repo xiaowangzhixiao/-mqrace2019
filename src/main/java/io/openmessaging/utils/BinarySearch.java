@@ -14,6 +14,19 @@ public class BinarySearch {
         return left - 1;
     }
 
+    public static int binarySearchMin(long t,int start, int end, byte[] time) {
+        int left = start, right = end-1;
+        while (left < right) {
+            int mid = left + (right - left) / 2;
+            if (time[mid] < t) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left - 1;
+    }
+
     public static int binarySearchMax(long t, int nums, long[] time) {
         int left = 0, right = nums - 1;
         while (left < right) {

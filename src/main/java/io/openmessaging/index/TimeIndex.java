@@ -6,30 +6,33 @@ import static io.openmessaging.utils.BinarySearch.binarySearchMin;
  * 二级索引
  */
 public class TimeIndex {
-    private long[] baseTime;
+    private long baseTime;
     private int[] offset;
     private int nums = 0;
 
     public TimeIndex(int capacity) {
-        baseTime = new long[capacity];
         offset = new int[capacity];
     }
 
-    public void put(long baseTime, int offset) {
-        this.baseTime[nums] = baseTime;
+    public long getBaseTime() {
+        return baseTime;
+    }
+
+    public void setBaseTime(long baseTime) {
+        this.baseTime = baseTime;
+    }
+
+    public void put(int offset) {
         this.offset[nums] = offset;
         nums++;
     }
 
-    public int search(long t) {
-        return binarySearchMin(t, nums, baseTime);
+    public int search(long time) {
+        return ((int)(time - baseTime)) >>> 8;
     }
 
     public long getBaseTime(int index) {
-        if (index >= nums) {
-            return Long.MAX_VALUE;
-        }
-        return baseTime[index];
+        return index << 8 + baseTime;
     }
 
     public int getOffset(int index) {

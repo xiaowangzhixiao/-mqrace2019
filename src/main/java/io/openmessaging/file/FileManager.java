@@ -89,44 +89,36 @@ public class FileManager {
     private List<Message> get(long aMin, long aMax, long tMin, long tMax) {
         List<Message> result = new ArrayList<>();
 
-        int block = blockIndex.searchMin(tMin);
-        if (block == -1){
-            block = 0;
+        int minBlock = blockIndex.searchMin(tMin);
+        if (tMin > blockIndex.time[blockIndex.nums-1]){
+            minBlock += 1;
         }
+        int maxBlock = blockIndex.searchMax(tMax);
 
-        long offset = block * BLOCK_INDEX_SIZE;
-        int inOffset = 0;
+        int minOffset = minBlock * BLOCK_INDEX_SIZE;
+        int maxOffset = maxBlock * BLOCK_INDEX_SIZE;
+        if (tMax >= blockIndex.time[blockIndex.nums-1]){
+            maxOffset  = this.nums;
+        }
+        ByteBuffer readAtBuffer = ByteBuffer.allocateDirect((maxOffset - minOffset) * AT_SIZE);
+        ByteBuffer readBodyBuffer = ByteBuffer.allocateDirect((maxOffset - minOffset) * BODY_SIZE);
+
         long t;
         long a;
-        atIo.read(offset * AT_SIZE);
-        bodyIo.read(offset * BODY_SIZE);
-        ByteBuffer bodyByteBuffer = bodyIo.getReadByteBuffer();
-
-        while (true){
-            t = atIo.getReadByteBuffer().getLong();
-            a = atIo.getReadByteBuffer().getLong();
-            if (t >= tMin && t <= tMax && a >= aMin && a <= aMax){
-                bodyByteBuffer.position(inOffset*BODY_SIZE);
-                Message m = new Message(a, t, new byte[34]);
-                bodyByteBuffer.get(m.getBody());
-                result.add(m);
+        atIo.read(readAtBuffer,(long)minOffset * (long)AT_SIZE);
+        bodyIo.read(readBodyBuffer, (long) minOffset * (long) BODY_SIZE);
+        int innerOffset = 0;
+        do {
+            t = readAtBuffer.getLong();
+            a = readAtBuffer.getLong();
+            if (t >= tMin && t <= tMax && a >= aMin && a <= aMax) {
+                Message message = new Message(a, t, new byte[34]);
+                readBodyBuffer.position(innerOffset*BODY_SIZE);
+                readBodyBuffer.get(message.getBody());
+                result.add(message);
             }
-            if (t > tMax){
-                break;
-            }
-
-            inOffset++;
-            if (offset + inOffset == this.nums){
-                break;
-            }
-            if (inOffset == READ_BUFFER_SIZE){
-                offset = offset + inOffset;
-                inOffset = 0;
-                atIo.read(offset * AT_SIZE);
-                bodyIo.read(offset * BODY_SIZE);
-                bodyByteBuffer = bodyIo.getReadByteBuffer();
-            }
-        }
+            innerOffset ++;
+        } while (t <= tMax && readAtBuffer.hasRemaining());
 
         return result;
     }
@@ -165,17 +157,14 @@ public class FileManager {
         long a;
         atIo.read(readBuffer,(long)minOffset * (long)AT_SIZE);
 
-        while (true){
+        do {
             t = readBuffer.getLong();
             a = readBuffer.getLong();
-            if (t >= tMin && t <= tMax && a >= aMin && a <= aMax){
+            if (t >= tMin && t <= tMax && a >= aMin && a <= aMax) {
                 sum += a;
                 nums++;
             }
-            if (t > tMax || !readBuffer.hasRemaining()){
-                break;
-            }
-        }
+        } while (t <= tMax && readBuffer.hasRemaining());
 
         return new Pair<>(sum,nums);
     }
