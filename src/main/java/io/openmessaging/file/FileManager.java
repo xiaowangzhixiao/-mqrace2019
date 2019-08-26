@@ -92,9 +92,6 @@ public class FileManager {
         while (timeInfo.hasNext() && readABuffer.hasRemaining()){
             t = timeInfo.getNextTime();
             a = readABuffer.getLong();
-            if (a != t) {
-                t = t;
-            }
             if (t > tMax){
                 break;
             }
@@ -103,10 +100,6 @@ public class FileManager {
                 readBodyBuffer.position(innerOffset*BODY_SIZE);
                 readBodyBuffer.get(message.getBody());
                 result.add(message);
-                if (ByteBuffer.wrap(message.getBody()).getLong() != t){
-                    System.out.println(ByteBuffer.wrap(message.getBody()).getLong());
-                    t = t;
-                }
             }
             innerOffset ++;
         }
