@@ -14,17 +14,17 @@ public class BinarySearch {
         return left - 1;
     }
 
-    public static int binarySearchMin(long t,int start, int end, byte[] time) {
+    public static int binarySearchMin(long t,int start, int end, byte[] time, long baseTime) {
         int left = start, right = end-1;
         while (left < right) {
             int mid = left + (right - left) / 2;
-            if (time[mid] < t) {
+            if (baseTime+(time[mid] & 0xff) < t) {
                 left = mid + 1;
             } else {
                 right = mid;
             }
         }
-        return left - 1;
+        return left;
     }
 
     public static int binarySearchMax(long t, int nums, long[] time) {
@@ -32,6 +32,19 @@ public class BinarySearch {
         while (left < right) {
             int mid = left + (right - left) / 2;
             if (time[mid] <= t) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
+    }
+
+    public static int binarySearchMax(long t, int start, int end, byte[] time, long baseTime) {
+        int left = start, right = end - 1;
+        while (left < right) {
+            int mid = left + (right - left) / 2;
+            if (baseTime + (time[mid] & 0xff) <= t) {
                 left = mid + 1;
             } else {
                 right = mid;
