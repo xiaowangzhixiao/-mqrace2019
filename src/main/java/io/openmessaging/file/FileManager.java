@@ -12,7 +12,7 @@ import static io.openmessaging.Constant.*;
 
 public class FileManager {
     private static final int BUFFER_LEN = 4;
-    private static final int BLOCK_INDEX_SIZE = 128;
+    private static final int BLOCK_INDEX_SIZE = 32;
     private static final int WRITE_BUFFER_SIZE = 16 * 1024;
     private static final int BODY_BUFFER_SIZE = BODY_SIZE * WRITE_BUFFER_SIZE;
     private static final int AT_BUFFER_SIZE = AT_SIZE * WRITE_BUFFER_SIZE;
@@ -22,7 +22,7 @@ public class FileManager {
     private FileIO atIo;
     private FileIO bodyIo;
     private volatile int nums = 0;
-    private BlockIndex blockIndex = new BlockIndex(2000000);
+    private BlockIndex blockIndex = new BlockIndex(10000000);
 
     public static FileManager getWriteManager(int id) {
         if (!fileManagers.containsKey(id)){
