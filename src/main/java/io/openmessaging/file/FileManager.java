@@ -104,19 +104,16 @@ public class FileManager {
     }
 
     public static long getAvgValue(long aMin, long aMax, long tMin, long tMax){
-        long sum = 0;
-        int nums = 0;
+        long[] res = new long[2];
         for (Map.Entry<Integer, FileManager> entry: fileManagers.entrySet()){
-            Pair<Long, Integer> res = entry.getValue().getAvg(aMin,aMax,tMin,tMax);
-            sum += res.first;
-            nums += res.second;
+            entry.getValue().getAvg(aMin,aMax,tMin,tMax, res);
         }
-        return sum / (long)nums;
+        return res[0] / res[1];
     }
 
-    private Pair<Long, Integer> getAvg(long aMin, long aMax, long tMin, long tMax){
+    private void  getAvg(long aMin, long aMax, long tMin, long tMax, long[] res){
         long sum = 0;
-        int nums = 0;
+        long nums = 0;
         int minIndexIndex = timeIO.getIndexIndex(tMin);
         int minTimeIndex = timeIO.getMinIndex(minIndexIndex, tMin);
 
@@ -133,8 +130,8 @@ public class FileManager {
                 nums++;
             }
         }
-
-        return new Pair<>(sum,nums);
+        res[0] += sum;
+        res[1] += nums;
     }
 
 }
