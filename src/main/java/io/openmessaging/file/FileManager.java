@@ -66,13 +66,14 @@ public class FileManager {
         for (Map.Entry<Integer, FileManager> entry: fileManagers.entrySet()){
             result.addAll(entry.getValue().get(aMin,aMax,tMin,tMax));
         }
+//        System.out.println("size:" + result.size());
 
         result.sort(Comparator.comparingLong(Message::getT));
         return result;
     }
 
     private List<Message> get(long aMin, long aMax, long tMin, long tMax) {
-        System.out.println(tMin+","+tMax+","+aMax + "," + aMin);
+//        System.out.println(tMin+","+tMax+","+aMax + "," + aMin);
         List<Message> result = new ArrayList<>();
 
         int minIndexIndex = timeIO.getIndexIndex(tMin);
@@ -92,7 +93,7 @@ public class FileManager {
         while (timeInfo.hasNext() && readABuffer.hasRemaining()){
             t = timeInfo.getNextTime();
             a = readABuffer.getLong();
-            System.out.println(t + "," + a);
+//            System.out.println(t + "," + a);
             if (t > tMax){
                 break;
             }

@@ -46,7 +46,8 @@ public class TimeIO {
     public int getMinIndex(int indexIndex, long time) {
         int i = 1;
         while (getOffsetFromeIndex(indexIndex+i) == -1){i++;}
-        return binarySearchMin(time - index.getBaseTime(indexIndex), getOffsetFromeIndex(indexIndex), getOffsetFromeIndex(indexIndex + i), times);
+        long tmpTime = time - index.getBaseTime(indexIndex);
+        return binarySearchMin(tmpTime, getOffsetFromeIndex(indexIndex), getOffsetFromeIndex(indexIndex + i), times);
     }
 
     public int getMaxIndex(long time) {
@@ -108,7 +109,7 @@ public class TimeIO {
                 this.maxOffset = getOffsetFromeIndex(indexIndex + i);
                 this.nextIndexIndex = indexIndex + i;
             }
-            long time = index.getBaseTime(indexIndex) + (times[timeIndex] & 0xff);
+            long time = index.getBaseTime(indexIndex) + (long)(times[timeIndex] & 0xff);
             timeIndex++;
             return time;
         }
@@ -121,21 +122,21 @@ public class TimeIO {
     public static void main(String[] args) {
        TimeIO timeIO = new TimeIO();
         for (int i = 3; i < 400; i++) {
-            timeIO.put(i);
+            timeIO.put((long)i + 1567309838571L);
         }
 //        timeIO.put(1);
 //        timeIO.put(2);
 //        timeIO.put(600);
-        int indexIndex = timeIO.getIndexIndex(20);
-        int timeIndex = timeIO.getMinIndex(indexIndex, 20);
+        int indexIndex = timeIO.getIndexIndex(1567309838571L);
+        int timeIndex = timeIO.getMinIndex(indexIndex, 1567309838571L);
 
-        int maxTimeIndex = timeIO.getMaxIndex(400);
+        int maxTimeIndex = timeIO.getMaxIndex(1567309838600L);
 
         TimeInfo timeInfo =timeIO.new TimeInfo(indexIndex, timeIndex);
 
         while (timeInfo.hasNext()){
             long t = timeInfo.getNextTime();
-            if (t > 398) break;
+            if (t > 1567309838600L) break;
             System.out.println(t);
         }
         System.out.println(maxTimeIndex - timeIndex);

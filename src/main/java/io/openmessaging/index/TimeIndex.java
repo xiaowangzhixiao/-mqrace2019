@@ -42,7 +42,7 @@ public class TimeIndex {
     }
 
     public long getBaseTime(int index) {
-        return (long)index << 8 + baseTime;
+        return (long)(index << 8) + baseTime;
     }
 
     public int getOffset(int index) {
