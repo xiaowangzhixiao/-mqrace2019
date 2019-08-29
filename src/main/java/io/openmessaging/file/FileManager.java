@@ -72,6 +72,7 @@ public class FileManager {
     }
 
     private List<Message> get(long aMin, long aMax, long tMin, long tMax) {
+        System.out.println(tMin+","+tMax+","+aMax + "," + aMin);
         List<Message> result = new ArrayList<>();
 
         int minIndexIndex = timeIO.getIndexIndex(tMin);
@@ -91,6 +92,7 @@ public class FileManager {
         while (timeInfo.hasNext() && readABuffer.hasRemaining()){
             t = timeInfo.getNextTime();
             a = readABuffer.getLong();
+            System.out.println(t + "," + a);
             if (t > tMax){
                 break;
             }
@@ -125,7 +127,7 @@ public class FileManager {
 
         int maxTimeIndex = timeIO.getMaxIndex(tMax);
 
-        ByteBuffer readBuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex + 1) * A_SIZE);
+        ByteBuffer readBuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * A_SIZE);
 
         long t;
         long a;
