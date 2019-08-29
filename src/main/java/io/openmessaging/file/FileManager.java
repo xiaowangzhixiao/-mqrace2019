@@ -1,7 +1,6 @@
 package io.openmessaging.file;
 
 import io.openmessaging.Message;
-import io.openmessaging.utils.Pair;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -21,7 +20,6 @@ public class FileManager {
     private FileIO aIo;
     private TimeIO timeIO;
     private FileIO bodyIo;
-    private volatile int nums = 0;
 
     public static FileManager getWriteManager(int id) {
         if (!fileManagers.containsKey(id)){
@@ -48,7 +46,6 @@ public class FileManager {
         buffer = bodyIo.getActiveBuffer();
         buffer.put(message.getBody());
         bodyIo.write();
-        nums++;
     }
 
     public static void finishWrite(){
