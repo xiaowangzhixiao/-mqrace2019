@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static io.openmessaging.Constant.*;
 
 public class FileManager {
-    private static final int BUFFER_LEN = 4;
+    private static final int BUFFER_LEN = 8;
     private static final int WRITE_BUFFER_SIZE = 8 * 1024;
     private static final int BODY_BUFFER_SIZE = BODY_SIZE * WRITE_BUFFER_SIZE;
     private static final int A_BUFFER_SIZE = A_SIZE * WRITE_BUFFER_SIZE;
@@ -88,13 +88,10 @@ public class FileManager {
         bodyIo.read(readBodyBuffer, (long) minTimeIndex * (long) BODY_SIZE);
         int innerOffset = 0;
         TimeIO.TimeInfo timeInfo = timeIO.new TimeInfo(minIndexIndex, minTimeIndex);
-        while (timeInfo.hasNext() && readABuffer.hasRemaining()){
+        while (readABuffer.hasRemaining()){
             t = timeInfo.getNextTime();
             a = readABuffer.getLong();
-//            if (t > tMax){
-//                break;
-//            }
-            if (t <= tMax && a >= aMin && a <= aMax) {
+            if (a >= aMin && a <= aMax) {
                 Message message = new Message(a, t, new byte[34]);
                 readBodyBuffer.position(innerOffset*BODY_SIZE);
                 readBodyBuffer.get(message.getBody());
@@ -127,17 +124,11 @@ public class FileManager {
 
         ByteBuffer readBuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * A_SIZE);
 
-        long t;
         long a;
         aIo.read(readBuffer,(long)minTimeIndex * (long)A_SIZE);
-        TimeIO.TimeInfo timeInfo = timeIO.new TimeInfo(minIndexIndex, minTimeIndex);
-        while (timeInfo.hasNext() && readBuffer.hasRemaining()){
-            t = timeInfo.getNextTime();
+        while (readBuffer.hasRemaining()){
             a = readBuffer.getLong();
-//            if (t > tMax){
-//                break;
-//            }
-            if (t <= tMax && a >= aMin && a <= aMax) {
+            if (a >= aMin && a <= aMax) {
                 sum += a;
                 nums++;
             }

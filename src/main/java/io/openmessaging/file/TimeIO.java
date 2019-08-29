@@ -10,7 +10,6 @@ public class TimeIO {
     private byte[] times = new byte[Integer.MAX_VALUE / 10];
     private int nums = 0;
     private long baseTime = 0;
-    private long lastTime = 0;
 
     public void put(long time) {
         if (nums == 0){
@@ -28,7 +27,6 @@ public class TimeIO {
         }
 
         this.times[nums] = (byte) (time & 0xff);
-        lastTime = time;
         nums++;
     }
 
@@ -46,22 +44,17 @@ public class TimeIO {
     public int getMinIndex(int indexIndex, long time) {
         int i = 1;
         while (getOffsetFromeIndex(indexIndex+i) == -1){i++;}
-        long tmpTime = time - index.getBaseTime(indexIndex);
-        return binarySearchMin(tmpTime, getOffsetFromeIndex(indexIndex), getOffsetFromeIndex(indexIndex + i), times);
+        return binarySearchMin(time - index.getBaseTime(indexIndex), getOffsetFromeIndex(indexIndex), getOffsetFromeIndex(indexIndex + i), times);
     }
 
     public int getMaxIndex(long time) {
         int indexIndex = index.search(time);
-        if (time >= lastTime){
-            return this.nums;
-        }
         int i = 1;
         while (getOffsetFromeIndex(indexIndex+i) == -1){i++;}
         return binarySearchMax(time - index.getBaseTime(indexIndex) , getOffsetFromeIndex(indexIndex), getOffsetFromeIndex(indexIndex + i), times);
     }
 
-    public static int binarySearchMin(long t,int start, int end, byte[] time) {
-        int left = start, right = end;
+    public static int binarySearchMin(long t,int left, int right, byte[] time) {
         while (left < right) {
             int mid = left + (right - left) / 2;
             if ((time[mid] & 0xff) < t) {
@@ -73,8 +66,7 @@ public class TimeIO {
         return left;
     }
 
-    public static int binarySearchMax(long t, int start, int end, byte[] time) {
-        int left = start, right = end;
+    public static int binarySearchMax(long t, int left, int right, byte[] time) {
         while (left < right) {
             int mid = left + (right - left) / 2;
             if ((time[mid] & 0xff) <= t) {
