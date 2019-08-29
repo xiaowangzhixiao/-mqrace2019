@@ -1,7 +1,5 @@
 package io.openmessaging.index;
 
-import static io.openmessaging.utils.BinarySearch.binarySearchMin;
-
 /**
  * 二级索引
  */
@@ -27,19 +25,31 @@ public class TimeIndex {
         nums++;
     }
 
+    public void update(int offset) {
+        this.offset[nums-1] = offset;
+    }
+
     public int search(long time) {
-        return ((int)(time - baseTime)) >>> 8;
+        int index = (int)((time - baseTime) >>> 8);
+        if (index >= nums){
+            return nums-1;
+        }
+        while (offset[index] == -1){
+            index++;
+        }
+
+        return index;
     }
 
     public long getBaseTime(int index) {
-        return index << 8 + baseTime;
+        return (long)(index << 8) + baseTime;
     }
 
     public int getOffset(int index) {
-        if (index >= nums) {
-            return Integer.MAX_VALUE;
-        }
         return offset[index];
     }
 
+    public int getNums() {
+        return nums;
+    }
 }

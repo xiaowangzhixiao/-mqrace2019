@@ -1,7 +1,6 @@
 package io.openmessaging.file;
 
 import io.openmessaging.Message;
-import io.openmessaging.index.BlockIndex;
 import io.openmessaging.utils.Pair;
 
 import java.nio.ByteBuffer;
@@ -11,18 +10,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import static io.openmessaging.Constant.*;
 
 public class FileManager {
-    private static final int BUFFER_LEN = 4;
-    private static final int BLOCK_INDEX_SIZE = 32;
-    private static final int WRITE_BUFFER_SIZE = 16 * 1024;
+
+    private static final int BUFFER_LEN = 8;
+    private static final int WRITE_BUFFER_SIZE = 8 * 1024;
     private static final int BODY_BUFFER_SIZE = BODY_SIZE * WRITE_BUFFER_SIZE;
-    private static final int AT_BUFFER_SIZE = AT_SIZE * WRITE_BUFFER_SIZE;
+    private static final int A_BUFFER_SIZE = A_SIZE * WRITE_BUFFER_SIZE;
 
     private static ConcurrentHashMap<Integer, FileManager> fileManagers = new ConcurrentHashMap<>();
 
-    private FileIO atIo;
+    private FileIO aIo;
+    private TimeIO timeIO;
     private FileIO bodyIo;
     private volatile int nums = 0;
-    private BlockIndex blockIndex = new BlockIndex(10000000);
 
     public static FileManager getWriteManager(int id) {
         if (!fileManagers.containsKey(id)){
@@ -35,23 +34,21 @@ public class FileManager {
     }
 
     private FileManager(int id){
-        atIo = new FileIO(AT_BUFFER_SIZE, BUFFER_LEN, DIR_PATH + id + "at.ali");
+        aIo = new FileIO(A_BUFFER_SIZE, BUFFER_LEN, DIR_PATH + id + "a.ali");
         bodyIo = new FileIO(BODY_BUFFER_SIZE, BUFFER_LEN, DIR_PATH + id + "body.ali");
+        timeIO = new TimeIO();
     }
 
     public void put(Message message) {
-        if(nums % BLOCK_INDEX_SIZE == 0){
-            blockIndex.add(message.getT());
-        }
-        nums++;
-        ByteBuffer buffer = atIo.getActiveBuffer();
-        buffer.putLong(message.getT());
+        timeIO.put(message.getT());
+        ByteBuffer buffer = aIo.getActiveBuffer();
         buffer.putLong(message.getA());
-        atIo.write();
+        aIo.write();
 
         buffer = bodyIo.getActiveBuffer();
         buffer.put(message.getBody());
         bodyIo.write();
+        nums++;
     }
 
     public static void finishWrite(){
@@ -61,7 +58,7 @@ public class FileManager {
     }
 
     private void force() {
-        atIo.force();
+        aIo.force();
         bodyIo.force();
     }
 
@@ -78,82 +75,64 @@ public class FileManager {
     private List<Message> get(long aMin, long aMax, long tMin, long tMax) {
         List<Message> result = new ArrayList<>();
 
-        int minBlock = blockIndex.searchMin(tMin);
-        if (tMin > blockIndex.time[blockIndex.nums-1]){
-            minBlock += 1;
-        }
-        int maxBlock = blockIndex.searchMax(tMax);
+        int minIndexIndex = timeIO.getIndexIndex(tMin);
+        int minTimeIndex = timeIO.getMinIndex(minIndexIndex, tMin);
 
-        int minOffset = minBlock * BLOCK_INDEX_SIZE;
-        int maxOffset = maxBlock * BLOCK_INDEX_SIZE;
-        if (tMax >= blockIndex.time[blockIndex.nums-1]){
-            maxOffset  = this.nums;
-        }
-        ByteBuffer readAtBuffer = ByteBuffer.allocateDirect((maxOffset - minOffset) * AT_SIZE);
-        ByteBuffer readBodyBuffer = ByteBuffer.allocateDirect((maxOffset - minOffset) * BODY_SIZE);
+        int maxTimeIndex = timeIO.getMaxIndex(tMax);
+
+        ByteBuffer readABuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * A_SIZE);
+        ByteBuffer readBodyBuffer = ByteBuffer.allocateDirect((maxTimeIndex - minTimeIndex) * BODY_SIZE);
 
         long t;
         long a;
-        atIo.read(readAtBuffer,(long)minOffset * (long)AT_SIZE);
-        bodyIo.read(readBodyBuffer, (long) minOffset * (long) BODY_SIZE);
+        aIo.read(readABuffer,(long)minTimeIndex * (long)A_SIZE);
+        bodyIo.read(readBodyBuffer, (long) minTimeIndex * (long) BODY_SIZE);
         int innerOffset = 0;
-        do {
-            t = readAtBuffer.getLong();
-            a = readAtBuffer.getLong();
-            if (t >= tMin && t <= tMax && a >= aMin && a <= aMax) {
+        TimeIO.TimeInfo timeInfo = timeIO.new TimeInfo(minIndexIndex, minTimeIndex);
+        while (readABuffer.hasRemaining()){
+            t = timeInfo.getNextTime();
+            a = readABuffer.getLong();
+            if (a >= aMin && a <= aMax) {
                 Message message = new Message(a, t, new byte[34]);
                 readBodyBuffer.position(innerOffset*BODY_SIZE);
                 readBodyBuffer.get(message.getBody());
                 result.add(message);
             }
             innerOffset ++;
-        } while (t <= tMax && readAtBuffer.hasRemaining());
+        }
 
         return result;
     }
 
     public static long getAvgValue(long aMin, long aMax, long tMin, long tMax){
-        long sum = 0;
-        int nums = 0;
+        long[] res = new long[2];
         for (Map.Entry<Integer, FileManager> entry: fileManagers.entrySet()){
-            Pair<Long, Integer> res = entry.getValue().getAvg(aMin,aMax,tMin,tMax);
-            sum += res.first;
-            nums += res.second;
+            entry.getValue().getAvg(aMin,aMax,tMin,tMax, res);
         }
-        return sum / (long)nums;
+        return res[0] / res[1];
     }
 
-    private Pair<Long, Integer> getAvg(long aMin, long aMax, long tMin, long tMax){
+    private void  getAvg(long aMin, long aMax, long tMin, long tMax, long[] res){
         long sum = 0;
-        int nums = 0;
+        long nums = 0;
+        int minIndexIndex = timeIO.getIndexIndex(tMin);
+        int minTimeIndex = timeIO.getMinIndex(minIndexIndex, tMin);
 
-        int minBlock = blockIndex.searchMin(tMin);
-        if (tMin > blockIndex.time[blockIndex.nums-1]){
-            minBlock += 1;
-        }
-        int maxBlock = blockIndex.searchMax(tMax);
+        int maxTimeIndex = timeIO.getMaxIndex(tMax);
 
-        int minOffset = minBlock * BLOCK_INDEX_SIZE;
-        int maxOffset = maxBlock * BLOCK_INDEX_SIZE;
-        if (tMax >= blockIndex.time[blockIndex.nums-1]){
-            maxOffset  = this.nums;
-        }
-        ByteBuffer readBuffer = ByteBuffer.allocateDirect((maxOffset - minOffset) * AT_SIZE);
+        ByteBuffer readBuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * A_SIZE);
 
-        long t;
         long a;
-        atIo.read(readBuffer,(long)minOffset * (long)AT_SIZE);
-
-        do {
-            t = readBuffer.getLong();
+        aIo.read(readBuffer,(long)minTimeIndex * (long)A_SIZE);
+        while (readBuffer.hasRemaining()){
             a = readBuffer.getLong();
-            if (t >= tMin && t <= tMax && a >= aMin && a <= aMax) {
+            if (a >= aMin && a <= aMax) {
                 sum += a;
                 nums++;
             }
-        } while (t <= tMax && readBuffer.hasRemaining());
-
-        return new Pair<>(sum,nums);
+        }
+        res[0] += sum;
+        res[1] += nums;
     }
 
 }

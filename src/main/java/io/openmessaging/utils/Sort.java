@@ -5,7 +5,6 @@ import io.openmessaging.Message;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.PriorityQueue;
 
 public class Sort {
 
