@@ -79,12 +79,16 @@ public class FileManager {
 
         int maxTimeIndex = timeIO.getMaxIndex(tMax);
 
-        ByteBuffer readABuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * A_SIZE);
+        if (aBuffer.get() == null) {
+            aBuffer.set(ByteBuffer.allocateDirect(A_SIZE * 800000));
+        }
+
+        ByteBuffer readABuffer = aBuffer.get();
         ByteBuffer readBodyBuffer = ByteBuffer.allocateDirect((maxTimeIndex - minTimeIndex) * BODY_SIZE);
 
         long t;
         long a;
-        aIo.read(readABuffer,(long)minTimeIndex * (long)A_SIZE);
+        aIo.read(readABuffer,(long)minTimeIndex * (long)A_SIZE, (maxTimeIndex - minTimeIndex) * A_SIZE);
         bodyIo.read(readBodyBuffer, (long) minTimeIndex * (long) BODY_SIZE);
         int innerOffset = 0;
         TimeIO.TimeInfo timeInfo = timeIO.new TimeInfo(minIndexIndex, minTimeIndex);
