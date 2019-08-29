@@ -1,7 +1,6 @@
 package io.openmessaging.file;
 
 import io.openmessaging.Message;
-import io.openmessaging.index.BlockIndex;
 import io.openmessaging.utils.Pair;
 
 import java.nio.ByteBuffer;
@@ -11,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static io.openmessaging.Constant.*;
 
 public class FileManager {
-    private static final int BUFFER_LEN = 12;
+    private static final int BUFFER_LEN = 4;
     private static final int WRITE_BUFFER_SIZE = 8 * 1024;
     private static final int BODY_BUFFER_SIZE = BODY_SIZE * WRITE_BUFFER_SIZE;
     private static final int A_BUFFER_SIZE = A_SIZE * WRITE_BUFFER_SIZE;
@@ -80,8 +79,8 @@ public class FileManager {
 
         int maxTimeIndex = timeIO.getMaxIndex(tMax);
 
-        ByteBuffer readABuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex + 1) * A_SIZE);
-        ByteBuffer readBodyBuffer = ByteBuffer.allocateDirect((maxTimeIndex - minTimeIndex + 1) * BODY_SIZE);
+        ByteBuffer readABuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * A_SIZE);
+        ByteBuffer readBodyBuffer = ByteBuffer.allocateDirect((maxTimeIndex - minTimeIndex) * BODY_SIZE);
 
         long t;
         long a;

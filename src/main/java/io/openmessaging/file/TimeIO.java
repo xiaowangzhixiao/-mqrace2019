@@ -2,11 +2,6 @@ package io.openmessaging.file;
 
 import io.openmessaging.index.TimeIndex;
 
-import java.util.concurrent.ThreadLocalRandom;
-
-import static io.openmessaging.utils.BinarySearch.binarySearchMax;
-import static io.openmessaging.utils.BinarySearch.binarySearchMin;
-
 /**
  * TimeIO
  */
@@ -51,7 +46,7 @@ public class TimeIO {
     public int getMinIndex(int indexIndex, long time) {
         int i = 1;
         while (getOffsetFromeIndex(indexIndex+i) == -1){i++;}
-        return binarySearchMin(time, getOffsetFromeIndex(indexIndex), getOffsetFromeIndex(indexIndex + i), times, index.getBaseTime(indexIndex));
+        return binarySearchMin(time - index.getBaseTime(indexIndex), getOffsetFromeIndex(indexIndex), getOffsetFromeIndex(indexIndex + i), times);
     }
 
     public int getMaxIndex(long time) {
@@ -61,7 +56,33 @@ public class TimeIO {
         }
         int i = 1;
         while (getOffsetFromeIndex(indexIndex+i) == -1){i++;}
-        return binarySearchMax(time, getOffsetFromeIndex(indexIndex), getOffsetFromeIndex(indexIndex + i), times, index.getBaseTime(indexIndex));
+        return binarySearchMax(time - index.getBaseTime(indexIndex) , getOffsetFromeIndex(indexIndex), getOffsetFromeIndex(indexIndex + i), times);
+    }
+
+    public static int binarySearchMin(long t,int start, int end, byte[] time) {
+        int left = start, right = end;
+        while (left < right) {
+            int mid = left + (right - left) / 2;
+            if ((time[mid] & 0xff) < t) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
+    }
+
+    public static int binarySearchMax(long t, int start, int end, byte[] time) {
+        int left = start, right = end;
+        while (left < right) {
+            int mid = left + (right - left) / 2;
+            if ((time[mid] & 0xff) <= t) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
     }
 
     public class TimeInfo {
