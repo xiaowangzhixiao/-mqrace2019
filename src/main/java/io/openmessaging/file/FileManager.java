@@ -80,7 +80,7 @@ public class FileManager {
         int maxTimeIndex = timeIO.getMaxIndex(tMax);
 
         if (aBuffer.get() == null) {
-            aBuffer.set(ByteBuffer.allocateDirect(A_SIZE * 800000));
+            aBuffer.set(ByteBuffer.allocateDirect(A_SIZE * 400000));
         }
 
         ByteBuffer readABuffer = aBuffer.get();
@@ -124,7 +124,7 @@ public class FileManager {
         int maxTimeIndex = timeIO.getMaxIndex(tMax);
 
         if (aBuffer.get() == null) {
-            aBuffer.set(ByteBuffer.allocateDirect(A_SIZE * 800000));
+            aBuffer.set(ByteBuffer.allocateDirect(A_SIZE * 400000));
         }
 
         ByteBuffer readBuffer = aBuffer.get();
