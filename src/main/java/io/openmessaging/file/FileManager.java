@@ -21,6 +21,8 @@ public class FileManager {
     private TimeIO timeIO;
     private FileIO bodyIo;
 
+    private ThreadLocal<ByteBuffer> aBuffer = new ThreadLocal<>();
+
     public static FileManager getWriteManager(int id) {
         if (!fileManagers.containsKey(id)){
             FileManager fileManager = new FileManager(id);
@@ -117,10 +119,14 @@ public class FileManager {
 
         int maxTimeIndex = timeIO.getMaxIndex(tMax);
 
-        ByteBuffer readBuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * A_SIZE);
+        if (aBuffer.get() == null) {
+            aBuffer.set(ByteBuffer.allocateDirect(A_SIZE * 800000));
+        }
+
+        ByteBuffer readBuffer = aBuffer.get();
 
         long a;
-        aIo.read(readBuffer,(long)minTimeIndex * (long)A_SIZE);
+        aIo.read(readBuffer,(long)minTimeIndex * (long)A_SIZE, (maxTimeIndex- minTimeIndex) * A_SIZE);
         while (readBuffer.hasRemaining()){
             a = readBuffer.getLong();
             if (a >= aMin && a <= aMax) {
