@@ -66,14 +66,12 @@ public class FileManager {
         for (Map.Entry<Integer, FileManager> entry: fileManagers.entrySet()){
             result.addAll(entry.getValue().get(aMin,aMax,tMin,tMax));
         }
-//        System.out.println("size:" + result.size());
 
         result.sort(Comparator.comparingLong(Message::getT));
         return result;
     }
 
     private List<Message> get(long aMin, long aMax, long tMin, long tMax) {
-//        System.out.println(tMin+","+tMax+","+aMax + "," + aMin);
         List<Message> result = new ArrayList<>();
 
         int minIndexIndex = timeIO.getIndexIndex(tMin);
@@ -93,11 +91,10 @@ public class FileManager {
         while (timeInfo.hasNext() && readABuffer.hasRemaining()){
             t = timeInfo.getNextTime();
             a = readABuffer.getLong();
-//            System.out.println(t + "," + a);
-            if (t > tMax){
-                break;
-            }
-            if (t >= tMin && t <= tMax && a >= aMin && a <= aMax) {
+//            if (t > tMax){
+//                break;
+//            }
+            if (t <= tMax && a >= aMin && a <= aMax) {
                 Message message = new Message(a, t, new byte[34]);
                 readBodyBuffer.position(innerOffset*BODY_SIZE);
                 readBodyBuffer.get(message.getBody());
@@ -137,10 +134,10 @@ public class FileManager {
         while (timeInfo.hasNext() && readBuffer.hasRemaining()){
             t = timeInfo.getNextTime();
             a = readBuffer.getLong();
-            if (t > tMax){
-                break;
-            }
-            if (t >= tMin && t <= tMax && a >= aMin && a <= aMax) {
+//            if (t > tMax){
+//                break;
+//            }
+            if (t <= tMax && a >= aMin && a <= aMax) {
                 sum += a;
                 nums++;
             }
