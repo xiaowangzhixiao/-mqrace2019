@@ -22,7 +22,6 @@ public class FileManager {
     private FileIO bodyIo;
 
     private ThreadLocal<ByteBuffer> aBuffer = new ThreadLocal<>();
-    private ThreadLocal<TimeIO.TimeInfo> timeInfoThreadLocal = new ThreadLocal<>();
 
     public static FileManager getWriteManager(int id) {
         if (!fileManagers.containsKey(id)){
@@ -88,13 +87,7 @@ public class FileManager {
         aIo.read(readABuffer,(long)minTimeIndex * (long)A_SIZE);
         bodyIo.read(readBodyBuffer, (long) minTimeIndex * (long) BODY_SIZE);
         int innerOffset = 0;
-
-        if (timeInfoThreadLocal.get() == null) {
-            timeInfoThreadLocal.set(timeIO.new TimeInfo());
-        }
-        TimeIO.TimeInfo timeInfo = timeInfoThreadLocal.get();
-        timeInfo.reinit(minIndexIndex, minTimeIndex);
-
+        TimeIO.TimeInfo timeInfo = timeIO.new TimeInfo(minIndexIndex, minTimeIndex);
         while (readABuffer.hasRemaining()){
             t = timeInfo.getNextTime();
             a = readABuffer.getLong();
