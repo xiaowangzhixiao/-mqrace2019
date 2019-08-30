@@ -84,13 +84,22 @@ public class TimeIO {
         private int nextIndexIndex;
         private int timeIndex;
 
+        public TimeInfo(){
+
+        }
+
         public TimeInfo(int indexIndex, int timeIndex){
+            reinit(indexIndex, timeIndex);
+        }
+
+        public void reinit(int indexIndex, int timeIndex){
             this.indexIndex = indexIndex;
             this.timeIndex = timeIndex;
             int i = 1;
             while (getOffsetFromeIndex(indexIndex+i) == -1) { i++; }
             this.maxOffset = getOffsetFromeIndex(indexIndex + i);
             this.nextIndexIndex = indexIndex + i;
+
         }
 
         public long getNextTime(){
