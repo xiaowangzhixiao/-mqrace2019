@@ -80,7 +80,7 @@ public class FileManager {
         ByteBuffer readABuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * 8);
         ByteBuffer readBodyBuffer = ByteBuffer.allocateDirect((maxTimeIndex - minTimeIndex) * 34);
 
-        List<Message> result = new ArrayList<>(maxTimeIndex - minIndexIndex);
+        List<Message> result = new ArrayList<>();
 
         long t;
         long a;
