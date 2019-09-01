@@ -62,17 +62,15 @@ public class FileManager {
     }
 
     public static List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        List<Message> result = new LinkedList<>();
+        List<Message> result = new ArrayList<>(800000);
         for (Map.Entry<Integer, FileManager> entry: fileManagers.entrySet()){
             result.addAll(entry.getValue().get(aMin,aMax,tMin,tMax));
         }
-
         result.sort(Comparator.comparingLong(Message::getT));
         return result;
     }
 
     private List<Message> get(long aMin, long aMax, long tMin, long tMax) {
-        List<Message> result = new LinkedList<>();
 
         int minIndexIndex = timeIO.getIndexIndex(tMin);
         int minTimeIndex = timeIO.getMinIndex(minIndexIndex, tMin);
@@ -81,6 +79,8 @@ public class FileManager {
 
         ByteBuffer readABuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * 8);
         ByteBuffer readBodyBuffer = ByteBuffer.allocateDirect((maxTimeIndex - minTimeIndex) * 34);
+
+        List<Message> result = new ArrayList<>(maxTimeIndex - minIndexIndex);
 
         long t;
         long a;
