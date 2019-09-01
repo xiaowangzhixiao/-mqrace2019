@@ -13,7 +13,7 @@ public class FileManager {
     private static final int BUFFER_LEN = 8;
     private static final int WRITE_BUFFER_SIZE = 8 * 1024;
     private static final int BODY_BUFFER_SIZE = 34 * WRITE_BUFFER_SIZE;
-    private static final int A_BUFFER_SIZE = 4 * WRITE_BUFFER_SIZE;
+    private static final int A_BUFFER_SIZE = 8 * WRITE_BUFFER_SIZE;
 
     private static ConcurrentHashMap<Integer, FileManager> fileManagers = new ConcurrentHashMap<>();
 
@@ -79,12 +79,12 @@ public class FileManager {
 
         int maxTimeIndex = timeIO.getMaxIndex(tMax);
 
-        ByteBuffer readABuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * 4);
+        ByteBuffer readABuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * 8);
         ByteBuffer readBodyBuffer = ByteBuffer.allocateDirect((maxTimeIndex - minTimeIndex) * 34);
 
         long t;
         long a;
-        aIo.read(readABuffer,(long)minTimeIndex * 4L);
+        aIo.read(readABuffer,(long)minTimeIndex * 8L);
         bodyIo.read(readBodyBuffer, (long) minTimeIndex * 34L);
         int innerOffset = 0;
         TimeIO.TimeInfo timeInfo = timeIO.new TimeInfo(minIndexIndex, minTimeIndex);
@@ -120,13 +120,13 @@ public class FileManager {
         int maxTimeIndex = timeIO.getMaxIndex(tMax);
 
         if (aBuffer.get() == null) {
-            aBuffer.set(ByteBuffer.allocateDirect(4 * 200000));
+            aBuffer.set(ByteBuffer.allocateDirect(8 * 80000));
         }
 
         ByteBuffer readBuffer = aBuffer.get();
 
         long a;
-        aIo.read(readBuffer,(long)minTimeIndex * 4L, (maxTimeIndex- minTimeIndex) * 4);
+        aIo.read(readBuffer,(long)minTimeIndex * 8L, (maxTimeIndex- minTimeIndex) * 8);
         while (readBuffer.hasRemaining()){
             a = readBuffer.getLong();
             if (a >= aMin && a <= aMax) {
