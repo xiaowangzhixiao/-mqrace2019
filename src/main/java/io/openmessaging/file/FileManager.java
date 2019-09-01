@@ -62,7 +62,7 @@ public class FileManager {
     }
 
     public static List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        List<Message> result = new ArrayList<>(80000);
+        List<Message> result = new ArrayList<>();
         for (Map.Entry<Integer, FileManager> entry: fileManagers.entrySet()){
             result.addAll(entry.getValue().get(aMin,aMax,tMin,tMax));
         }
