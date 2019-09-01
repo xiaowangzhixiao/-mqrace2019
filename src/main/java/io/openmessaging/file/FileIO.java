@@ -103,23 +103,6 @@ public class FileIO {
         }
     }
 
-    private ThreadLocal<ByteBuffer> readByteBuffers = new ThreadLocal<>();
-
-    public void initRead(int bufferSize){
-        if (readByteBuffers.get() == null) {
-            ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
-            readByteBuffers.set(byteBuffer);
-        }
-    }
-
-    public void read(long offset){
-        ByteBuffer byteBuffer = readByteBuffers.get();
-        byteBuffer.clear();
-        Future future = fileChannel.read(byteBuffer, offset);
-        while (!future.isDone()) ;
-        byteBuffer.flip();
-    }
-
     public void read(ByteBuffer byteBuffer, long offset){
         byteBuffer.clear();
         Future future = fileChannel.read(byteBuffer, offset);
@@ -134,8 +117,5 @@ public class FileIO {
         byteBuffer.flip();
     }
 
-    public ByteBuffer getReadByteBuffer(){
-        return readByteBuffers.get();
-    }
 
 }

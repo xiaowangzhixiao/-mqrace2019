@@ -12,8 +12,8 @@ public class FileManager {
 
     private static final int BUFFER_LEN = 8;
     private static final int WRITE_BUFFER_SIZE = 8 * 1024;
-    private static final int BODY_BUFFER_SIZE = BODY_SIZE * WRITE_BUFFER_SIZE;
-    private static final int A_BUFFER_SIZE = A_SIZE * WRITE_BUFFER_SIZE;
+    private static final int BODY_BUFFER_SIZE = 34 * WRITE_BUFFER_SIZE;
+    private static final int A_BUFFER_SIZE = 4 * WRITE_BUFFER_SIZE;
 
     private static ConcurrentHashMap<Integer, FileManager> fileManagers = new ConcurrentHashMap<>();
 
@@ -62,7 +62,7 @@ public class FileManager {
     }
 
     public static List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        List<Message> result = new ArrayList<>();
+        List<Message> result = new LinkedList<>();
         for (Map.Entry<Integer, FileManager> entry: fileManagers.entrySet()){
             result.addAll(entry.getValue().get(aMin,aMax,tMin,tMax));
         }
@@ -72,20 +72,20 @@ public class FileManager {
     }
 
     private List<Message> get(long aMin, long aMax, long tMin, long tMax) {
-        List<Message> result = new ArrayList<>();
+        List<Message> result = new LinkedList<>();
 
         int minIndexIndex = timeIO.getIndexIndex(tMin);
         int minTimeIndex = timeIO.getMinIndex(minIndexIndex, tMin);
 
         int maxTimeIndex = timeIO.getMaxIndex(tMax);
 
-        ByteBuffer readABuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * A_SIZE);
-        ByteBuffer readBodyBuffer = ByteBuffer.allocateDirect((maxTimeIndex - minTimeIndex) * BODY_SIZE);
+        ByteBuffer readABuffer = ByteBuffer.allocateDirect((maxTimeIndex- minTimeIndex) * 4);
+        ByteBuffer readBodyBuffer = ByteBuffer.allocateDirect((maxTimeIndex - minTimeIndex) * 34);
 
         long t;
         long a;
-        aIo.read(readABuffer,(long)minTimeIndex * (long)A_SIZE);
-        bodyIo.read(readBodyBuffer, (long) minTimeIndex * (long) BODY_SIZE);
+        aIo.read(readABuffer,(long)minTimeIndex * 4L);
+        bodyIo.read(readBodyBuffer, (long) minTimeIndex * 34L);
         int innerOffset = 0;
         TimeIO.TimeInfo timeInfo = timeIO.new TimeInfo(minIndexIndex, minTimeIndex);
         while (readABuffer.hasRemaining()){
@@ -93,7 +93,7 @@ public class FileManager {
             a = readABuffer.getLong();
             if (a >= aMin && a <= aMax) {
                 Message message = new Message(a, t, new byte[34]);
-                readBodyBuffer.position(innerOffset*BODY_SIZE);
+                readBodyBuffer.position(innerOffset*34);
                 readBodyBuffer.get(message.getBody());
                 result.add(message);
             }
@@ -120,13 +120,13 @@ public class FileManager {
         int maxTimeIndex = timeIO.getMaxIndex(tMax);
 
         if (aBuffer.get() == null) {
-            aBuffer.set(ByteBuffer.allocateDirect(A_SIZE * 80000));
+            aBuffer.set(ByteBuffer.allocateDirect(4 * 80000));
         }
 
         ByteBuffer readBuffer = aBuffer.get();
 
         long a;
-        aIo.read(readBuffer,(long)minTimeIndex * (long)A_SIZE, (maxTimeIndex- minTimeIndex) * A_SIZE);
+        aIo.read(readBuffer,(long)minTimeIndex * 4L, (maxTimeIndex- minTimeIndex) * 4);
         while (readBuffer.hasRemaining()){
             a = readBuffer.getLong();
             if (a >= aMin && a <= aMax) {
